@@ -27,11 +27,11 @@ vercel          # preview deploy
 vercel --prod   # production deploy
 ```
 
-`vercel.json` runs `npm run build` and serves `dist/`. Every file under `api/` is deployed as a Vercel Function at the matching `/api/...` URL (`api/_lib/` is shared code and is not exposed). Set environment variables in the Vercel dashboard or with `vercel env add` — see `.env.example`.
+`vercel.json` runs `npm run build` and serves `dist/`. All `/api/*` requests go to a single Vercel Function (`api/index.js`), which routes them to the handlers in `server/`. One function keeps the deployment under the Hobby plan's 12-function limit. Set environment variables in the Vercel dashboard or with `vercel env add` — see `.env.example`.
 
 ## Backend features
 
-The frontend continues to use the existing client-side Open-Meteo/OpenStreetMap resource flow. The Vercel Functions in `api/` expose these endpoints:
+The frontend continues to use the existing client-side Open-Meteo/OpenStreetMap resource flow. The API exposes these endpoints:
 
 - `/api/health`
 - `/api/resources`
