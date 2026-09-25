@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+.env*.local
+.vercel/
+.netlify/
+netlify/
+netlify.toml
+.DS_Store

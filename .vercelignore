@@ -1,0 +1,4 @@
+dist/
+netlify/
+netlify.toml
+.DS_Store

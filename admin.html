@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#efe1c8" />
+    <title>THRIVE — Emergency Weather Alerts</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="admin-page">
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="THRIVE home">
+        <span class="mark"></span>
+        <span><strong>THRIVE</strong><small>Heat-health risk platform</small></span>
+      </a>
+      <nav><a href="/">Main platform</a><button type="button" id="logoutButton" hidden>Log out</button></nav>
+    </header>
+
+    <main class="admin-main">
+      <section class="admin-hero">
+        <div>
+          <p class="kicker">Authorized response console</p>
+          <h1>Emergency Weather Alerts</h1>
+          <p class="lead">Detect dangerous conditions, select affected registered users, and trigger real Exotel SMS or voice calls. Delivery changes come back through Exotel webhooks.</p>
+        </div>
+        <div class="admin-note">
+          <strong>Production path</strong>
+          <span>THRIVE risk engine → opted-in users → Vercel Function → Exotel → webhook → live status</span>
+        </div>
+      </section>
+
+      <section id="loginSection" class="admin-card admin-login">
+        <div><p class="kicker">Administrator</p><h2>Sign in</h2><p>Only authorized THRIVE administrators can send alerts or run automatic-alert checks.</p></div>
+        <form id="loginForm">
+          <label>Password
+            <span class="input-with-action"><input id="adminPassword" type="password" autocomplete="current-password" required /><button type="button" class="input-action" id="toggleAdminPassword" aria-label="Show password">Show</button></span>
+          </label>
+          <button type="submit">Sign in</button>
+          <p id="loginStatus" class="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section id="dashboardSection" class="admin-dashboard" hidden>
+        <section class="admin-card">
+          <div class="admin-section-head">
+            <div><p class="kicker">0 · Integration readiness</p><h2>Is the alert stack configured?</h2></div>
+            <button type="button" class="secondary-button" id="refreshIntegration">Refresh status</button>
+          </div>
+          <div id="integrationStatus" class="integration-status"><p class="admin-help">Checking configuration…</p></div>
+          <p class="admin-help">READY means the required server-side variables are present. It does not place a real call or SMS; use TEST MODE first, then a controlled real recipient.</p>
+        </section>
+
+        <section class="admin-card">
+          <div class="admin-section-head">
+            <div><p class="kicker">1 · Alert definition</p><h2>What is happening?</h2></div>
+            <span class="admin-live-pill" id="backendStatus">Checking backend…</span>
+          </div>
+          <div class="admin-grid two">
+            <label>Selected location <input id="alertLocation" /></label>
+            <label>Temperature °C <input id="alertTemperature" type="number" step="0.1" /></label>
+            <label>Latitude <input id="alertLatitude" type="number" step="0.000001" /></label>
+            <label>Longitude <input id="alertLongitude" type="number" step="0.000001" /></label>
+            <label>Risk level
+              <select id="alertRiskLevel"><option>LOW</option><option>WATCH</option><option>HIGH</option><option>EXTREME</option></select>
+            </label>
+            <label>Thermal risk score <input id="alertRiskScore" type="number" min="0" max="100" /></label>
+          </div>
+          <label>Warning text <textarea id="alertMessage" rows="4" placeholder="Keep this as the warning/safety text. The production SMS is rendered from EXOTEL_SMS_TEMPLATE so it remains DLT-compliant."></textarea></label>
+          <p class="admin-help">In production, the exact SMS body must match the DLT-approved template configured in Exotel. This field supplies the warning text variable; it does not bypass DLT.</p>
+        </section>
+
+        <section class="admin-card">
+          <div class="admin-section-head"><div><p class="kicker">2 · Delivery controls</p><h2>Who should receive it?</h2></div><button type="button" class="secondary-button" id="refreshUsers">Refresh users</button></div>
+          <div id="usersList" class="users-list"><p class="admin-help">Loading registered users…</p></div>
+          <div class="delivery-grid">
+            <div class="toggle-card"><label class="checkbox-row"><input id="sendSms" type="checkbox" checked /><span>SMS</span></label><small>Exotel SMS API + DLT template</small></div>
+            <div class="toggle-card"><label class="checkbox-row"><input id="sendCall" type="checkbox" /><span>Voice call</span></label><small>Exotel outbound call → configured THRIVE voice flow</small></div>
+            <div class="toggle-card warning"><label class="checkbox-row"><input id="testMode" type="checkbox" /><span>TEST MODE</span></label><small>No real recipients are contacted. Uses the configured ALERT_TEST_NUMBER.</small></div>
+          </div>
+          <div class="button-row">
+            <button id="sendSmsButton" type="button">Send SMS</button>
+            <button id="sendCallButton" type="button">Make calls</button>
+            <button id="sendBothButton" type="button">Send SMS + Call</button>
+          </div>
+          <p id="actionStatus" class="form-status" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="admin-card">
+          <div class="admin-section-head"><div><p class="kicker">3 · Automatic mode</p><h2>Risk-triggered alerts</h2></div><button type="button" class="secondary-button" id="runAutomatic">Run check now</button></div>
+          <div class="automatic-rules">
+            <div><strong>LOW</strong><span>No automatic alert</span></div>
+            <div><strong>WATCH</strong><span>No automatic call</span></div>
+            <div><strong>HIGH</strong><span>SMS to opted-in users</span></div>
+            <div><strong>EXTREME</strong><span>SMS + voice call to opted-in users who enabled calls</span></div>
+          </div>
+          <p class="admin-help">Automatic mode groups users by location, reuses the existing THRIVE risk calculation on the server, and applies cooldown + duplicate prevention.</p>
+          <pre id="automaticOutput" class="admin-output" hidden></pre>
+        </section>
+
+        <section class="admin-card">
+          <div class="admin-section-head"><div><p class="kicker">4 · Delivery ledger</p><h2>Real provider status</h2></div><button type="button" class="secondary-button" id="refreshAlerts">Refresh alerts</button></div>
+          <div id="alertsList" class="alerts-list"><p class="admin-help">Loading recent alerts…</p></div>
+        </section>
+      </section>
+    </main>
+
+    <footer><strong>© All Copyrights Reserved to Team Tensor Forge · <a href="mailto:teamtensorforge@gmail.com">teamtensorforge@gmail.com</a></strong><p>THRIVE supports early awareness and disaster preparedness.</p></footer>
+    <script src="./admin.js"></script>
+  </body>
+</html>

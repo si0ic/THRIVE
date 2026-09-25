@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>THRIVE | Heat Health Risk Platform</title>
+    <meta name="description" content="THRIVE heat-health risk, GIS map, hospitals and emergency warning prototype." />
+    <meta name="theme-color" content="#f8ecd7" id="themeColorMeta" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23080706'/%3E%3Cpath d='M29 6h6v52h-6z' fill='%23ff721b'/%3E%3Cpath d='M20 38a12 12 0 1 0 24 0c0-9-12-18-12-28 0 10-12 19-12 28z' fill='%23ff3b30'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800;9..144,900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@10.6.1/ol.css" />
+<link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"><i></i></div>
+    <header class="site-header" id="siteHeader">
+      <a class="brand" href="#main-content">
+        <span class="mark"></span>
+        <span>
+          <strong>THRIVE</strong>
+          <small>Thermal Health Risk Identification & Vulnerability Evaluation</small>
+        </span>
+      </a>
+      <nav id="mainNav">
+        <a href="#map-section">Map</a>
+        <a href="#hospitals">Hospitals</a>
+        <a href="#register">Register</a>
+        <a href="#faq">FAQ</a>
+        <a href="#privacy">Privacy</a>
+      </nav>
+      <div class="header-actions" aria-label="Site controls">
+        <button type="button" class="header-control" id="siteSearchToggle" aria-haspopup="dialog" aria-controls="siteSearchDialog" title="Search THRIVE">⌕ <span>Search</span></button>
+        <button type="button" class="header-control" id="themeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">☾</button>
+        <button type="button" class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Open navigation" aria-controls="mainNav" aria-expanded="false">☰</button>
+      </div>
+    </header>
+
+    <div class="site-search-dialog" id="siteSearchDialog" role="dialog" aria-modal="true" aria-labelledby="siteSearchTitle" hidden>
+      <div class="site-search-backdrop" data-close-search></div>
+      <section class="site-search-panel">
+        <div class="site-search-head">
+          <div><p class="kicker">THRIVE search</p><h2 id="siteSearchTitle">Find a page, section or topic.</h2></div>
+          <button type="button" class="modal-close" data-close-search aria-label="Close search">×</button>
+        </div>
+        <label for="siteSearchInput">Search this site</label>
+        <input id="siteSearchInput" type="search" placeholder="Try “hospital”, “privacy”, “heat risk”…" autocomplete="off" />
+        <div id="siteSearchResults" class="site-search-results" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <main id="main-content" tabindex="-1">
+      <section class="hero">
+        <div class="hero-text">
+          <p class="kicker">Extreme heat is a health threat</p>
+          <h1>Heat is not just weather.</h1>
+          <p class="lead">
+            THRIVE shows the danger first, then explains why the heat may harm people in the selected area.
+          </p>
+          <div class="evidence-box">
+            <strong>~489,000</strong>
+            <span>heat-related deaths per year</span>
+            <p>
+              Global estimate based on studies from 2000-2019.
+              <a href="https://www.who.int/news-room/fact-sheets/detail/climate-change-heat-and-health" target="_blank" rel="noreferrer">Source: WHO</a>
+            </p>
+          </div>
+        </div>
+
+        <section class="risk-panel" aria-label="Current local heat threat">
+          <div class="location-line">
+            <span>Selected area</span>
+            <strong id="selectedLocation">New Delhi, Delhi, India</strong>
+          </div>
+          <div class="score-row">
+            <div>
+              <strong id="riskScore">--</strong>
+              <span>/100</span>
+            </div>
+            <b id="riskLevel">Loading</b>
+          </div>
+          <p id="riskSummary">Loading live weather and local risk indicators.</p>
+
+          <form class="search" id="searchForm">
+            <label for="locationInput">Search city, district, ward or zone</label>
+            <div class="search-row">
+              <input id="locationInput" name="location" value="New Delhi" autocomplete="off" />
+              <button type="submit">Search</button>
+            </div>
+            <div class="results" id="searchResults" hidden></div>
+          </form>
+          <div class="risk-tools" aria-label="Report tools">
+            <button type="button" class="secondary-button" id="copyRiskButton">Copy risk snapshot</button>
+            <button type="button" class="secondary-button" id="printRiskButton">Print report</button>
+            <span class="tool-status" id="copyStatus" role="status" aria-live="polite"></span>
+          </div>
+          <p class="last-updated">Data updated <time id="lastUpdated" datetime="">—</time></p>
+        </section>
+      </section>
+
+      <section class="notice">
+        <p class="kicker">A note from Team Tensor Forge</p>
+        <h2>Heat can become dangerous before it looks dangerous.</h2>
+        <p>
+          Do not ignore extreme-heat warnings because the temperature does not look unusual.
+          High humidity, strong sunlight, low wind and long exposure can place heavy stress on the human body.
+          Stay hydrated, take breaks, avoid unnecessary outdoor exposure during dangerous periods and check on vulnerable people.
+        </p>
+      </section>
+
+      <section class="grid-section">
+        <div class="section-title">
+          <p class="kicker">Current thermal intelligence</p>
+          <h2>Not just temperature. Human thermal load.</h2>
+          <p>
+            Observed weather comes from Open-Meteo. Heat Index, PET and THRIVE risk are calculated indicators.
+            Mortality and hospitalization values are model-based signals, not predictions of actual deaths or admissions.
+          </p>
+        </div>
+        <div class="metrics">
+          <article><span>OBSERVED</span><b id="temperature">--</b><p>Temperature</p></article>
+          <article><span>OBSERVED</span><b id="humidity">--</b><p>Relative humidity</p></article>
+          <article><span>OBSERVED</span><b id="wind">--</b><p>Wind speed</p></article>
+          <article><span>OBSERVED</span><b id="radiation">--</b><p>Solar radiation</p></article>
+          <article><span>CALCULATED</span><b id="heatIndex">--</b><p>Heat Index</p></article>
+          <article><span>CALCULATED</span><b id="apparentTemp">--</b><p>Apparent temperature</p></article>
+          <article><span>CALCULATED</span><b id="pet">--</b><p>PET approximation</p></article>
+          <article><span>MODELED</span><b id="mortalityRisk">--</b><p>Mortality-risk signal</p></article>
+          <article><span>MODELED</span><b id="hospitalRisk">--</b><p>Hospitalization-risk signal</p></article>
+        </div>
+      </section>
+
+      <section class="explain-section">
+        <div>
+          <p class="kicker">Why is the score high?</p>
+          <h2 id="whyTitle">Risk factors</h2>
+          <p id="whyText">THRIVE explains the score using the actual weather and prototype vulnerability factors.</p>
+        </div>
+        <div class="factor-list" id="factorList"></div>
+      </section>
+
+      <section class="map-section" id="map-section">
+        <div class="map-header">
+          <div>
+            <p class="kicker">GIS map</p>
+          <h2>Selected-area heat risk and local resources.</h2>
+          </div>
+          <div class="legend">
+            <span><i class="selected-key"></i>SELECTED LOCATION</span>
+          </div>
+        </div>
+        <div class="map-layout">
+          <div class="map-frame">
+            <div id="map" aria-label="Selected location map"></div>
+            <div class="map-overlay-legend" id="mapOverlayLegend" aria-live="polite">
+              <strong id="mapOverlayLocation">SELECTED LOCATION</strong>
+              <div class="map-overlay-temp-row">
+                <span class="map-big-temp" id="mapTempDisplay">--°C</span>
+                <span class="map-risk-badge" id="mapRiskBadge">--</span>
+              </div>
+              <div class="map-overlay-stats">
+                <span>💧 <b id="mapHumidity">--%</b></span>
+                <span>💨 <b id="mapWind">-- km/h</b></span>
+                <span>🌡 <b id="mapHeatIdx">--°C</b> feels like</span>
+              </div>
+              <div class="map-overlay-score">Thermal risk: <b id="mapRiskScore">--</b><span>/100</span></div>
+            </div>
+            <div class="map-note" id="mapStatus">Loading free map…</div>
+          </div>
+          <aside class="hospital-panel" id="hospitals" aria-live="polite">
+            <p class="kicker">LOCAL RESOURCE SEARCH</p>
+            <h3 id="intelligenceLocation">Nearby hospitals &amp; parks</h3>
+            <p id="hospitalStatus">Hospitals and parks near your selected location are shown below and pinned on the map.</p>
+            <section class="intelligence-summary" aria-live="polite">
+              <strong>Selected location</strong>
+              <p id="aiStatus">The location above controls the map and nearby-resource search.</p>
+              <p id="aiHeatSummary"></p>
+              <ul id="aiActions"></ul>
+              <small id="aiDisclaimer"></small>
+            </section>
+            <div class="resource-columns">
+              <section><h4>Hospitals and clinics</h4><p id="aiHospitalSummary"></p><div class="hospital-list" id="hospitalList"></div></section>
+              <section><h4>Parks and green spaces</h4><p id="aiParkSummary"></p><div class="hospital-list" id="parkList"></div></section>
+            </div>
+            <small class="map-source">Basemap: OpenStreetMap via OpenLayers. Nearby hospitals and parks are loaded automatically from the selected location.</small>
+          </aside>
+        </div>
+      </section>
+
+      <section class="outlook-section">
+        <div class="section-title">
+          <p class="kicker">Next 5 days</p>
+          <h2>Thermal risk trajectory.</h2>
+        </div>
+        <div class="timeline" id="timeline"></div>
+      </section>
+
+      <section class="action-section" id="actions">
+        <div>
+          <p class="kicker">Who is at risk?</p>
+          <h2 id="vulnerabilityTitle">Vulnerability profile</h2>
+          <ul id="vulnerabilityList"></ul>
+        </div>
+        <div>
+          <p class="kicker">What should happen now?</p>
+          <h2>Actions for this risk level</h2>
+          <div class="actions">
+            <article>
+              <h3>Residents</h3>
+              <ul id="residentActions"></ul>
+            </article>
+            <article>
+              <h3>Authorities</h3>
+              <ul id="authorityActions"></ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="register-section" id="register">
+        <div>
+          <p class="kicker">Share your information</p>
+          <h2>Register your details with THRIVE.</h2>
+          <p>
+            Your information, selected location and the current THRIVE risk snapshot will be sent securely to
+            our Formspree inbox. We will review the submission and handle any follow-up manually.
+          </p>
+        </div>
+        <form id="registerForm" action="https://formspree.io/f/xzdoyypp" method="POST">
+          <label>Name <input name="name" required autocomplete="name" /></label>
+          <label>Phone number (with country code) <input name="phone" type="tel" placeholder="+91XXXXXXXXXX" required autocomplete="tel" /></label>
+          <label>Email <input name="email" type="email" required autocomplete="email" /></label>
+          <label>Selected location <input name="selected_location" id="formLocation" readonly /></label>
+          <input type="hidden" name="risk_level" id="formRiskLevel" />
+          <input type="hidden" name="thermal_risk_score" id="formRiskScore" />
+          <input type="hidden" name="risk_information" id="formRiskInfo" />
+          <input type="hidden" name="latitude" id="formLat" />
+          <input type="hidden" name="longitude" id="formLon" />
+          <input type="hidden" name="utm_source" id="utmSource" />
+          <input type="hidden" name="utm_medium" id="utmMedium" />
+          <input type="hidden" name="utm_campaign" id="utmCampaign" />
+          <input type="hidden" name="utm_term" id="utmTerm" />
+          <input type="hidden" name="utm_content" id="utmContent" />
+          <input type="hidden" name="landing_url" id="landingUrl" />
+          <input type="hidden" name="_subject" value="THRIVE — New User Information Submission" />
+
+          <label class="checkbox-row consent-line">
+            <input type="checkbox" name="consent" id="consentBox" value="true" required />
+            <span>I agree to THRIVE storing and using my name, phone number, email and selected location for
+              follow-up and manual heat/disaster preparedness support, as described in the <a href="#privacy">Privacy Policy</a>.</span>
+          </label>
+
+          <button type="submit">Send information</button>
+          <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="evidence-section heat-evidence">
+        <div>
+          <p class="kicker">Heat mortality evidence</p>
+          <h2>Heat can kill.</h2>
+          <p>
+            Heat-related mortality is not always recorded as "heatwave deaths." Extreme heat can worsen heart,
+            lung and other illnesses, so simple death counts may not show the full impact.
+          </p>
+        </div>
+        <div class="heat-evidence-content">
+          <figure class="heat-map-figure">
+            <img
+              src="./india-heat-map.jpg"
+              alt="Heat intensity and wind visualization across India and surrounding South Asia"
+              width="640"
+              height="360"
+              loading="lazy"
+              decoding="async"
+            />
+            <figcaption>Heat intensity visualization supplied for THRIVE's heat-health context.</figcaption>
+          </figure>
+          <div class="source-list">
+            <p><strong>~489,000 per year</strong> global heat-related deaths, estimated from 2000-2019 studies. Source: WHO.</p>
+            <p><strong>3,775 deaths</strong> reported by India's NCDC for heat-related illness during 2015-2019. Historical reported count, not the current annual Indian death count.</p>
+            <p><strong>730 deaths</strong> due to heat/sun stroke in India in 2022, from NCRB data shared by PIB in 2025. Reported official count, not total modeled heat-related mortality.</p>
+            <p>
+              Sources:
+              <a href="https://www.who.int/news-room/fact-sheets/detail/climate-change-heat-and-health" target="_blank" rel="noreferrer">WHO</a>,
+              <a href="https://ncdc.mohfw.gov.in/uploads/pdf/NAPCCHH%20with%20CSDs_2021.pdf" target="_blank" rel="noreferrer">NCDC</a>,
+              <a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2158403&lang=2&reg=3" target="_blank" rel="noreferrer">PIB/NCRB</a>
+            </p>
+          </div>
+        </div>
+      </section>
+      <section class="faq-section" id="faq">
+        <div>
+          <p class="kicker">Common questions</p>
+          <h2>THRIVE, explained plainly.</h2>
+          <p>Quick answers about the map, risk score, alerts, data sources and what the platform can and cannot tell you.</p>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>What does the THRIVE score mean?</summary>
+            <p>It is a modeled 0–100 heat-risk signal built from live weather variables and THRIVE's existing vulnerability logic. It is an early-warning indicator, not a diagnosis or a guaranteed prediction of harm.</p>
+          </details>
+          <details>
+            <summary>Why can the risk be high when temperature alone is not extreme?</summary>
+            <p>Humidity, wind, sunlight and other thermal-load inputs can change how hard the body must work to cool itself.</p>
+          </details>
+          <details>
+            <summary>Where do the weather and map data come from?</summary>
+            <p>THRIVE uses Open-Meteo for weather, OpenStreetMap/OpenLayers for mapping, and nearby resource search for hospitals and parks.</p>
+          </details>
+          <details>
+            <summary>What happens after I submit my information?</summary>
+            <p>Your submission is sent to THRIVE's Formspree inbox for manual review. THRIVE does not automatically place calls or send SMS messages from this form.</p>
+          </details>
+          <details>
+            <summary>Can I print or share the current risk?</summary>
+            <p>Yes. Use “Copy risk snapshot” for a text summary or “Print report” for a clean report-style printout.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="evidence-section" id="privacy">
+        <div>
+          <p class="kicker">Your data, explained plainly</p>
+          <h2>Privacy Policy</h2>
+          <p>
+            THRIVE only asks for personal information when you choose to submit the registration form.
+            This section explains what is collected, why, and how the information is handled.
+          </p>
+        </div>
+        <div class="source-list">
+          <p>
+            <strong>What we collect.</strong> If you submit the Register form: your name, phone number, email
+            address, selected location (place name and coordinates), and the heat-risk level and score shown to
+            you at the moment you registered. Browsing THRIVE itself (map, weather, hospitals) does not require
+            any personal information.
+          </p>
+          <p>
+            <strong>Why we collect it.</strong> To review your registration, understand the heat-risk context you
+            submitted, and manually follow up when appropriate. THRIVE does not automatically send SMS messages or
+            place voice calls from this registration form.
+          </p>
+          <p>
+            <strong>Who it is shared with.</strong> Your form submission is processed by Formspree and is available to
+            the THRIVE team for manual handling. THRIVE does not sell your data or share it with advertisers.
+          </p>
+          <p>
+            <strong>How it is stored.</strong> Form submissions are stored by Formspree according to the settings and
+            retention associated with the Formspree form, and may also be retained by the THRIVE team for manual
+            follow-up. Review the Formspree account and privacy controls used by this project for current retention details.
+          </p>
+          <p>
+            <strong>Your choices.</strong> Submitting is optional and requires your explicit consent at submission.
+            You can request correction or deletion of your information at any time by emailing
+            <a href="mailto:teamtensorforge@gmail.com">teamtensorforge@gmail.com</a> with the phone number or email
+            you submitted.
+          </p>
+          <p>
+            <strong>Important note.</strong> THRIVE is a prototype early-warning aid, not an official emergency
+            service. In a life-threatening emergency, always contact local emergency services directly rather than
+            relying on THRIVE alerts alone.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <div class="confirm-modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle" hidden>
+      <div class="confirm-backdrop"></div>
+      <section class="confirm-panel">
+        <p class="kicker">Please confirm</p>
+        <h2 id="confirmTitle">Submit your information?</h2>
+        <p id="confirmText">Your contact details, selected location and current THRIVE risk snapshot will be sent to the THRIVE Formspree inbox for manual handling.</p>
+        <div class="modal-actions">
+          <button type="button" class="secondary-button" id="cancelConfirm">Cancel</button>
+          <button type="button" id="confirmSubmit">Confirm registration</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="cookie-banner" id="cookieBanner" role="region" aria-label="Cookie notice" hidden>
+      <div><strong>Small cookie note.</strong><span>THRIVE uses a small amount of local browser storage to remember preferences such as dark mode and cookie consent.</span> <a href="#privacy">Privacy Policy</a></div>
+      <button type="button" id="cookieAccept">Got it</button>
+    </div>
+
+    <a class="floating-contact" href="mailto:teamtensorforge@gmail.com" aria-label="Contact Team Tensor Forge">✉ <span>Contact</span></a>
+    <button class="back-to-top" id="backToTop" type="button" aria-label="Back to top">↑</button>
+
+    <footer>
+      <strong>© All Copyrights Reserved to Team Tensor Forge</strong>
+      <p>THRIVE supports early awareness and disaster preparedness. Risk indicators are not a substitute for medical or official emergency guidance. <a href="#privacy">Privacy Policy</a></p>
+      <p class="vision-forge-credit">Built with ♥ and efforts by <a href="https://www.instagram.com/tensorforge.thrive?stkn=MWdyMTR0eGN3bHJkMw==" target="_blank" rel="noopener noreferrer">TEAM TENSOR FORGE</a> <span aria-hidden="true">·</span> <a href="mailto:teamtensorforge@gmail.com">teamtensorforge@gmail.com</a></p>
+    </footer>
+<script src="./app.js"></script>
+  </body>
+</html>
